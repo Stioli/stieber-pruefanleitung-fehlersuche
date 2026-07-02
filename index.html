@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prüfanleitung Fehlersuche Motor & Elektronik – Autohaus Stieber GmbH</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blau: #1a6dd4;
+    --blau-dunkel: #0e4a96;
+    --gold: #c8a96e;
+    --rot: #d63031;
+    --gelb: #fdcb6e;
+    --gruen: #00b894;
+    --grau-hell: #f5f6fa;
+    --grau: #dfe4ea;
+    --grau-dunkel: #57606f;
+    --weiss: #ffffff;
+    --schatten: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--grau-hell);
+    color: #2d3436;
+    line-height: 1.5;
+    padding-bottom: 90px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--blau);
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  header .brand { display: flex; align-items: center; gap: 12px; }
+  header .brand img { height: 40px; border-radius: 6px; background: white; padding: 2px 6px; }
+  header h1 { font-size: 17px; font-weight: 600; line-height: 1.2; }
+  header .firma { font-size: 12px; opacity: 0.85; }
+  header .hbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-weiss { background: white; color: var(--blau-dunkel); }
+  .btn-weiss:hover { background: #e8f1fd; }
+  .btn-gold { background: var(--gold); color: white; }
+  .btn-gruen { background: var(--gruen); color: white; }
+  .btn-gruen:disabled { background: #a8d5c9; cursor: not-allowed; }
+  .btn-blau { background: var(--blau); color: white; }
+  .btn-grau { background: var(--grau); color: #2d3436; }
+  .btn-rot { background: var(--rot); color: white; }
+  .btn-klein { padding: 5px 10px; font-size: 12px; }
+
+  .container { max-width: 1100px; margin: 16px auto; padding: 0 12px; }
+
+  /* DEMO BANNER */
+  .demo-banner {
+    background: var(--gelb);
+    color: #6b4e00;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .demo-banner.banner-ok { background: #d9f7ec; color: #00795f; }
+  .demo-banner.banner-fehler { background: #fdeaea; color: var(--rot); }
+
+  /* PROGRESS */
+  .progress-wrap {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 2px solid var(--grau);
+    padding: 10px 16px;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .progress-info { font-size: 13px; font-weight: 600; color: var(--grau-dunkel); white-space: nowrap; }
+  .progress-bar { flex: 1; min-width: 120px; height: 12px; background: var(--grau); border-radius: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--gruen); width: 0%; transition: width 0.3s; border-radius: 6px; }
+  .progress-fill.unvollst { background: var(--gold); }
+
+  /* CARDS */
+  .card {
+    background: var(--weiss);
+    border-radius: 10px;
+    box-shadow: var(--schatten);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    font-size: 16px;
+    color: var(--blau-dunkel);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--gold);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; font-weight: 600; color: var(--grau-dunkel); text-transform: uppercase; letter-spacing: 0.3px; }
+  .field label .pflicht-stern { color: var(--rot); font-size: 13px; }
+  input, select, textarea {
+    padding: 10px 12px;
+    border: 1.5px solid var(--grau);
+    border-radius: 7px;
+    font-size: 15px;
+    font-family: inherit;
+    background: white;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blau); }
+  textarea { resize: vertical; min-height: 54px; }
+  .feld-fehlt { border-color: var(--rot) !important; background: #fff5f5 !important; }
+
+  /* PRÜFSCHRITTE */
+  .schritt {
+    border: 1.5px solid var(--grau);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: white;
+    overflow: hidden;
+  }
+  .schritt.erledigt { border-color: var(--gruen); background: #f4fdf9; }
+  .schritt.nok { border-color: var(--rot); background: #fff5f5; }
+  .schritt.nok .schritt-nr { background: var(--rot); }
+  .schritt.fehlt { outline: 2px dashed var(--rot); outline-offset: 2px; }
+  .schritt-kopf {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+  }
+  .schritt-nr {
+    min-width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--blau);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .schritt.erledigt .schritt-nr { background: var(--gruen); }
+  .schritt-text { flex: 1; font-size: 14px; font-weight: 500; min-width: 160px; }
+  .badge-pflicht {
+    background: #fdeaea; color: var(--rot);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    margin-left: 6px; white-space: nowrap;
+  }
+  .status-btns { display: flex; gap: 6px; flex-shrink: 0; }
+  .status-btn {
+    min-width: 58px; height: 44px;
+    border-radius: 10px;
+    border: 2px solid var(--grau);
+    background: white;
+    font-size: 13px; font-weight: 700;
+    color: var(--grau-dunkel);
+    cursor: pointer;
+    padding: 0 8px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .status-btn.ok-an { background: var(--gruen); border-color: var(--gruen); color: white; }
+  .status-btn.nok-an { background: var(--rot); border-color: var(--rot); color: white; }
+  .custom-titel { flex: 1; min-width: 150px; font-weight: 600; }
+  .custom-wert { width: 92px; flex-shrink: 0; }
+  .gross-wrap { padding: 0 12px 12px; }
+  .gross-feld { min-height: 90px; font-size: 15px; }
+  .mess-ueberschrift {
+    font-size: 13px; font-weight: 700; color: var(--blau-dunkel);
+    margin: 16px 0 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .schritt-name { width: 160px; flex-shrink: 0; }
+  .schritt-name select { padding: 8px 10px; font-size: 14px; }
+  .detail-btn {
+    background: none; border: none;
+    color: var(--blau); font-size: 13px; font-weight: 600;
+    cursor: pointer; padding: 6px; white-space: nowrap;
+  }
+  .schritt-detail { display: none; padding: 0 12px 14px 12px; border-top: 1px dashed var(--grau); }
+  .schritt-detail.offen { display: block; padding-top: 12px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+  @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+
+  /* FOTOS */
+  .foto-zeile { margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .foto-thumb { position: relative; }
+  .foto-thumb img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1.5px solid var(--grau); }
+  .foto-thumb button {
+    position: absolute; top: -6px; right: -6px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--rot); color: white; border: none;
+    font-size: 11px; cursor: pointer; line-height: 1;
+  }
+  .foto-add {
+    width: 64px; height: 64px;
+    border: 2px dashed var(--blau);
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: var(--blau);
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  /* TABELLEN (DTC + Messungen) */
+  .subtabelle { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+  .subtabelle th {
+    background: var(--blau-dunkel); color: white;
+    padding: 7px 8px; text-align: left; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .subtabelle td { padding: 4px; border-bottom: 1px solid var(--grau); vertical-align: middle; }
+  .subtabelle input, .subtabelle select { padding: 7px 8px; font-size: 13px; border-radius: 5px; }
+  .bewertung-btn {
+    padding: 7px 10px; border-radius: 5px; border: 1.5px solid var(--grau);
+    background: white; cursor: pointer; font-size: 12px; font-weight: 700; width: 100%;
+  }
+  .bewertung-btn.ok { background: var(--gruen); border-color: var(--gruen); color: white; }
+  .bewertung-btn.nio { background: var(--rot); border-color: var(--rot); color: white; }
+  .zeile-loesch { background: none; border: none; color: var(--rot); font-size: 16px; cursor: pointer; padding: 4px; }
+  .tabellen-scroll { overflow-x: auto; }
+
+  /* ABSCHLUSS */
+  .signatur-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .signatur-box { border: 1.5px solid var(--grau); border-radius: 10px; padding: 14px; }
+  .signatur-box h3 { font-size: 13px; color: var(--blau-dunkel); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
+
+  /* STATUS CHIP */
+  .chip { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .chip-arbeit { background: #fdf3d7; color: #8a6d00; }
+  .chip-fertig { background: #d9f7ec; color: #00795f; }
+
+  /* MODAL */
+  .modal-hg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .modal-hg.offen { display: flex; }
+  .modal {
+    background: white; border-radius: 12px;
+    max-width: 520px; width: 100%;
+    max-height: 85vh; overflow-y: auto;
+    padding: 20px;
+  }
+  .modal h2 { font-size: 17px; color: var(--blau-dunkel); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gold); }
+  .modal ul { margin: 10px 0 16px 20px; font-size: 14px; }
+  .modal ul li { margin-bottom: 4px; color: var(--rot); font-weight: 500; }
+
+  /* MITARBEITER */
+  .ma-zeile { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--grau); }
+  .ma-zeile .ma-name { flex: 1; font-weight: 600; font-size: 14px; }
+  .ma-rolle { font-size: 12px; color: var(--grau-dunkel); background: var(--grau-hell); padding: 2px 8px; border-radius: 10px; }
+  .ma-neu { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .ma-neu input { flex: 2; min-width: 140px; }
+  .ma-neu select { flex: 1; min-width: 110px; }
+
+  /* ÜBERSICHT gespeicherter Prüfungen */
+  .bericht-zeile {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1.5px solid var(--grau);
+    border-radius: 10px; margin-bottom: 8px;
+    cursor: pointer; flex-wrap: wrap;
+    background: white;
+  }
+  .bericht-zeile:hover { border-color: var(--blau); }
+  .bericht-zeile .bz-titel { font-weight: 700; font-size: 14px; }
+  .bericht-zeile .bz-info { font-size: 12px; color: var(--grau-dunkel); flex: 1; }
+
+  /* DRUCK */
+  @media print {
+    header, .progress-wrap, .demo-banner, .hbtns, .detail-btn, .foto-add, .zeile-loesch,
+    .btn, .no-print { display: none !important; }
+    body { background: white; padding: 0; }
+    .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    .schritt-detail { display: block !important; }
+    .print-kopf { display: block !important; text-align: center; margin-bottom: 14px; }
+    input, select, textarea { border: none; border-bottom: 1px solid #999; border-radius: 0; }
+  }
+  .print-kopf { display: none; }
+  .print-kopf h1 { font-size: 20px; color: var(--blau-dunkel); }
+  .print-kopf p { font-size: 12px; color: var(--grau-dunkel); }
+
+  @media (max-width: 640px) {
+    .schritt-name { width: 100%; }
+    header h1 { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="https://www.autohaus-stieber.de/idbilder/xlogo.jpg" alt="Autohaus Stieber" onerror="this.style.display='none'">
+    <div>
+      <h1 data-i18n="app_titel">Prüfanleitung Fehlersuche Motor &amp; Elektronik</h1>
+      <div class="firma">Autohaus Stieber GmbH · Emerholzweg 5 · 70439 Stuttgart · V02072026</div>
+    </div>
+  </div>
+  <div class="hbtns">
+    <button class="btn btn-weiss btn-klein" id="sprachBtn" onclick="toggleSprache()" style="font-weight:800;">TR Türkçe</button>
+    <button class="btn btn-weiss btn-klein" data-i18n="btn_pruefungen" onclick="zeigeUebersicht()">📋 Prüfungen</button>
+    <button class="btn btn-weiss btn-klein" data-i18n="btn_mitarbeiter" onclick="oeffneMitarbeiter()">👥 Mitarbeiter</button>
+    <button class="btn btn-gold btn-klein" data-i18n="btn_neu" onclick="neuePruefung()">＋ Neue Prüfung</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="demo-banner banner-ok" id="cloudBanner">☁️ Mit der Datenbank verbunden – alle Eingaben werden automatisch zentral gespeichert.</div>
+
+  <div class="print-kopf">
+    <h1>Fehlersuche Motor &amp; Elektronik</h1>
+    <p>Autohaus Stieber GmbH · Emerholzweg 5 · 70439 Stuttgart · Tel. 0711 80 60 94 18 · V02072026</p>
+  </div>
+
+  <!-- KOPFDATEN -->
+  <div class="card" id="kopfCard">
+    <h2><span data-i18n="kopf_titel">Fahrzeug- &amp; Auftragsdaten</span> <span class="chip chip-arbeit" id="statusChip">In Arbeit</span></h2>
+    <div class="grid">
+      <div class="field"><label><span data-i18n="l_auftrag">Auftragsnummer</span> <span class="pflicht-stern">*</span></label><input id="k_auftrag" data-pflicht="1" placeholder="z.B. 2026-1234"></div>
+      <div class="field"><label><span data-i18n="l_kennzeichen">Kennzeichen</span> <span class="pflicht-stern">*</span></label><input id="k_kennzeichen" data-pflicht="1" placeholder="S-XX 1234" style="text-transform:uppercase;"></div>
+      <div class="field"><label><span data-i18n="l_fin">FIN</span></label><input id="k_fin" maxlength="17" placeholder="17-stellig"></div>
+      <div class="field"><label><span data-i18n="l_fahrzeug">Fahrzeug (Marke/Modell)</span></label><input id="k_fahrzeug" placeholder="z.B. VW Golf VII 1.4 TSI"></div>
+      <div class="field"><label><span data-i18n="l_km">km-Stand</span> <span class="pflicht-stern">*</span></label><input id="k_km" data-pflicht="1" type="number" placeholder="z.B. 89500"></div>
+      <div class="field"><label><span data-i18n="l_datum">Datum</span></label><input id="k_datum" type="date"></div>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label><span data-i18n="l_beanstandung">Kundenbeanstandung</span> <span class="pflicht-stern">*</span></label>
+      <textarea id="k_beanstandung" data-pflicht="1" placeholder="Beanstandung laut Auftrag / Fehler-Checkliste"></textarea>
+    </div>
+  </div>
+
+  <!-- PRÜFSCHRITTE -->
+  <div class="card">
+    <h2><span data-i18n="schritte_titel">Prüfschritte</span> <span style="font-size:12px;font-weight:400;color:var(--grau-dunkel);" data-i18n="schritte_hinweis">Felder mit <span class="badge-pflicht">Pflicht</span> müssen mit OK oder nicht OK bewertet sein (+ Name), bevor der Bericht abgeschlossen werden kann.</span></h2>
+    <div id="schritteListe"></div>
+  </div>
+
+  <!-- ABSCHLUSS -->
+  <div class="card">
+    <h2 data-i18n="abschluss_titel">Freigabe &amp; Abschluss</h2>
+    <div class="signatur-grid">
+      <div class="signatur-box">
+        <h3><span data-i18n="rolle_Techniker">Techniker</span> <span class="pflicht-stern">*</span></h3>
+        <div class="grid">
+          <div class="field"><label data-i18n="l_name">Name</label><select id="a_techniker"></select></div>
+          <div class="field"><label data-i18n="l_datum">Datum</label><input id="a_techniker_datum" type="date"></div>
+        </div>
+      </div>
+      <div class="signatur-box">
+        <h3><span data-i18n="rolle_Meister">Meister</span> <span class="pflicht-stern">*</span></h3>
+        <div class="grid">
+          <div class="field"><label data-i18n="l_name">Name</label><select id="a_meister"></select></div>
+          <div class="field"><label data-i18n="l_datum">Datum</label><input id="a_meister_datum" type="date"></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;" class="no-print">
+      <button class="btn btn-blau" data-i18n="btn_zwischenspeichern" onclick="speichern(true)">💾 Zwischenspeichern</button>
+      <button class="btn btn-gruen" id="abschlussBtn" data-i18n="btn_abschliessen" onclick="abschliessen()">✅ Als erledigt abschließen</button>
+      <button class="btn btn-grau" data-i18n="btn_pdf" onclick="window.print()">🖨️ PDF / Drucken</button>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:11px;color:var(--grau-dunkel);margin:20px 0;">
+    Autohaus Stieber GmbH · Werkstatt/Druckvorlagen/Fehlersuche Ablauf · V02072026
+  </div>
+</div>
+
+<!-- FORTSCHRITT -->
+<div class="progress-wrap no-print">
+  <div class="progress-info" id="progressText">Pflichtfelder: 0 / 0</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-info" id="saveInfo" style="color:var(--gruen);"></div>
+</div>
+
+<!-- MODAL: Gespeicherte Prüfungen -->
+<div class="modal-hg" id="modalUebersicht">
+  <div class="modal" style="max-width:720px;">
+    <h2 data-i18n="ueb_titel">Gespeicherte Prüfungen</h2>
+    <div id="berichtListe"></div>
+    <div style="margin-top:14px;text-align:right;">
+      <button class="btn btn-grau" data-i18n="btn_schliessen" onclick="schliesseModal('modalUebersicht')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: fehlende Pflichtfelder -->
+<div class="modal-hg" id="modalPflicht">
+  <div class="modal">
+    <h2 data-i18n="modal_titel">⚠️ Bericht kann noch nicht abgeschlossen werden</h2>
+    <p style="font-size:14px;" data-i18n="modal_intro">Folgende Pflichtfelder sind noch offen:</p>
+    <ul id="pflichtListe"></ul>
+    <button class="btn btn-blau" data-i18n="btn_verstanden" onclick="schliesseModal('modalPflicht')">Verstanden</button>
+  </div>
+</div>
+
+<!-- MODAL: Mitarbeiterverwaltung -->
+<div class="modal-hg" id="modalMitarbeiter">
+  <div class="modal">
+    <h2 data-i18n="ma_titel">👥 Mitarbeiter verwalten</h2>
+    <p style="font-size:13px;color:var(--grau-dunkel);margin-bottom:8px;" data-i18n="ma_intro">Diese Namen erscheinen in allen Auswahlfeldern. Ihr könnt sie selbst anlegen, ändern und löschen.</p>
+    <div id="maListe"></div>
+    <div class="ma-neu">
+      <input id="maNeuName" placeholder="Vor- und Nachname">
+      <select id="maNeuRolle">
+        <option value="Techniker" data-i18n="rolle_Techniker">Techniker</option>
+        <option value="Meister" data-i18n="rolle_Meister">Meister</option>
+        <option value="Serviceberater" data-i18n="rolle_Serviceberater">Serviceberater</option>
+        <option value="Azubi" data-i18n="rolle_Azubi">Azubi</option>
+      </select>
+      <button class="btn btn-gruen" data-i18n="btn_anlegen" onclick="mitarbeiterAnlegen()">＋ Anlegen</button>
+    </div>
+    <div style="margin-top:14px;text-align:right;">
+      <button class="btn btn-grau" data-i18n="btn_schliessen" onclick="schliesseModal('modalMitarbeiter')">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Version 5 – Supabase-Anbindung (Projekt fahrzeug-ankauf-automation)
+   Daten werden zentral in der Datenbank gespeichert.
+   localStorage dient als Offline-Fallback/Cache.
+   ============================================================ */
+const SUPABASE_URL = "https://mnglpqeqmoxccqnztqez.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uZ2xwcWVxbW94Y2Nxbnp0cWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTc5NTMsImV4cCI6MjA5NDU5Mzk1M30.MFc6lVVhxQESoDbklUZvWX5iOdLNr7ZceMVYfIweDHE";
+const CLOUD = !!(SUPABASE_URL && SUPABASE_KEY);
+let cloudOk = CLOUD;
+
+async function sb(pfad, opts = {}) {
+  const r = await fetch(SUPABASE_URL + "/rest/v1/" + pfad, {
+    ...opts,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + SUPABASE_KEY,
+      "Content-Type": "application/json",
+      ...(opts.headers || {})
+    }
+  });
+  if (!r.ok) throw new Error("Supabase " + r.status);
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
+}
+function setzeCloudStatus(ok) { if (cloudOk !== ok) { cloudOk = ok; aktualisiereBanner(); } }
+function aktualisiereBanner() {
+  const b = document.getElementById("cloudBanner");
+  if (!b) return;
+  if (!CLOUD) { b.textContent = t("demo_banner"); b.className = "demo-banner"; return; }
+  if (cloudOk) { b.textContent = t("banner_cloud"); b.className = "demo-banner banner-ok"; }
+  else { b.textContent = t("banner_offline"); b.className = "demo-banner banner-fehler"; }
+}
+function berichtHatInhalt(b) {
+  if (!b) return false;
+  if (b.kopf.auftrag || b.kopf.kennzeichen || b.kopf.beanstandung) return true;
+  return Object.values(b.schritte).some(s => s.status || s.name || s.titel || s.befund || s.sonstiges || s.fehlercode || (s.fotos && s.fotos.length));
+}
+let cloudTimer = null;
+function cloudSpeichern() {
+  if (!CLOUD || !berichtHatInhalt(bericht)) return;
+  clearTimeout(cloudTimer);
+  const b = bericht;
+  cloudTimer = setTimeout(async () => {
+    try {
+      await sb("fs_pruefungen", {
+        method: "POST",
+        headers: { "Prefer": "resolution=merge-duplicates" },
+        body: JSON.stringify({ id: b.id, kennzeichen: b.kopf.kennzeichen, auftrag: b.kopf.auftrag, fahrzeug: b.kopf.fahrzeug, status: b.status, angelegt: b.angelegt, daten: b })
+      });
+      setzeCloudStatus(true);
+    } catch (e) { setzeCloudStatus(false); }
+  }, 600);
+}
+function cloudMitarbeiter(methode, pfad, body) {
+  if (!CLOUD) return;
+  sb(pfad, { method: methode, body: body ? JSON.stringify(body) : undefined, headers: methode === "POST" ? { "Prefer": "resolution=merge-duplicates" } : {} })
+    .then(() => setzeCloudStatus(true)).catch(() => setzeCloudStatus(false));
+}
+
+/* ---------- Sprache / Dil (DE / TR) ---------- */
+let sprache = localStorage.getItem("stieber_sprache") || "de";
+const TEXTE = {
+de: {
+  app_titel: "Prüfanleitung Fehlersuche Motor &amp; Elektronik",
+  btn_pruefungen: "📋 Prüfungen", btn_mitarbeiter: "👥 Mitarbeiter", btn_neu: "＋ Neue Prüfung",
+  demo_banner: "🔶 VORSCHAU-MODUS – Daten werden nur lokal auf diesem Gerät gespeichert.",
+  banner_cloud: "☁️ Mit der Datenbank verbunden – alle Eingaben werden automatisch zentral gespeichert.",
+  banner_offline: "⚠️ Keine Verbindung zur Datenbank – Eingaben werden lokal gespeichert und bei der nächsten Änderung erneut übertragen.",
+  ueb_titel: "Gespeicherte Prüfungen",
+  kopf_titel: "Fahrzeug- &amp; Auftragsdaten",
+  l_auftrag: "Auftragsnummer", l_kennzeichen: "Kennzeichen", l_fin: "FIN",
+  l_fahrzeug: "Fahrzeug (Marke/Modell)", l_km: "km-Stand", l_datum: "Datum",
+  l_beanstandung: "Kundenbeanstandung",
+  ph_beanstandung: "Beanstandung laut Auftrag / Fehler-Checkliste",
+  schritte_titel: "Prüfschritte",
+  schritte_hinweis: 'Felder mit <span class="badge-pflicht">Pflicht</span> müssen mit OK oder nicht OK bewertet sein (+ Name), bevor der Bericht abgeschlossen werden kann.',
+  badge_pflicht: "Pflicht",
+  btn_ok: "✓ OK", btn_nok: "✗ nicht OK",
+  opt_name: "– Name –", opt_name_waehlen: "– Name wählen –",
+  btn_details: "Details ▾",
+  l_fehlercode: "Fehlercode", l_sonstiges: "Sonstiges / Bemerkung",
+  ph_sonstiges: "Bemerkung zum Prüfschritt",
+  l_fotos: "Fotos",
+  dtc_titel: "Ausgelesene Fehlercodes (DTC)",
+  dtc_code: "Code", dtc_sg: "Steuergerät", dtc_text: "Fehlertext", dtc_art: "Art",
+  dtc_statisch: "statisch", dtc_sporadisch: "sporadisch",
+  ph_sg: "Motor-SG", ph_fehlertext: "Fehlertext",
+  btn_zeile: "＋ Zeile hinzufügen",
+  mess_titel: "13. Bauteileprüfung – Soll-/Ist-Werte (Prüfpunkte selbst benennen)",
+  mess_badge: "mind. 1 Zeile Pflicht",
+  ph_bauteil: "Bauteil / Prüfpunkt benennen…", ph_soll: "Soll", ph_ist: "Ist",
+  ph_befund: "Befund, Auswertung, gefundenen Fehler und Messwerte eintragen…",
+  ph_auftrag: "Suchzeiten, Reparaturzeiten und Material eintragen…",
+  abschluss_titel: "Freigabe &amp; Abschluss",
+  rolle_Techniker: "Techniker", rolle_Meister: "Meister", rolle_Serviceberater: "Serviceberater", rolle_Azubi: "Azubi",
+  l_name: "Name",
+  btn_zwischenspeichern: "💾 Zwischenspeichern",
+  btn_abschliessen: "✅ Als erledigt abschließen",
+  btn_pdf: "🖨️ PDF / Drucken",
+  progress: "Pflichtfelder",
+  chip_arbeit: "In Arbeit", chip_fertig: "Erledigt",
+  modal_titel: "⚠️ Bericht kann noch nicht abgeschlossen werden",
+  modal_intro: "Folgende Pflichtfelder sind noch offen:",
+  btn_verstanden: "Verstanden",
+  ma_titel: "👥 Mitarbeiter verwalten",
+  ma_intro: "Diese Namen erscheinen in allen Auswahlfeldern. Ihr könnt sie selbst anlegen, ändern und löschen.",
+  ph_maname: "Vor- und Nachname",
+  btn_anlegen: "＋ Anlegen", btn_schliessen: "Schließen",
+  ma_leer: "Noch keine Mitarbeiter angelegt.",
+  ueb_leer: "Noch keine Prüfungen gespeichert.",
+  ohne_auftrag: "ohne Auftragsnr.",
+  save_ok: "✓ Gespeichert", save_auto: "✓ Automatisch gespeichert", save_fertig: "✓ Bericht abgeschlossen",
+  alert_speicher_voll: "Speicher voll – bitte alte Fotos/Berichte löschen.",
+  alert_name_eingeben: "Bitte einen Namen eingeben.",
+  alert_name_existiert: "Dieser Name existiert bereits.",
+  prompt_neuer_name: "Neuer Name:",
+  confirm_ma_loeschen: "wirklich löschen?",
+  confirm_bericht_loeschen: "Diese Prüfung wirklich löschen?",
+  alert_fertig: "✅ Bericht wurde als ERLEDIGT markiert und gespeichert.",
+  f_kopf: "Kopfdaten", f_schritt: "Schritt",
+  f_unbewertet: "noch nicht bewertet (OK / nicht OK)", f_name: "Name fehlt",
+  f_mess: "Bauteileprüfung 13.1–13.5: mindestens eine Zeile vollständig ausfüllen (Benennung, Ist-Wert, OK/nicht OK, Name)",
+  f_techniker: "Freigabe: Techniker fehlt", f_meister: "Freigabe: Meister fehlt"
+},
+tr: {
+  app_titel: "Kontrol Talimatı – Motor &amp; Elektronik Arıza Arama",
+  btn_pruefungen: "📋 Kontroller", btn_mitarbeiter: "👥 Çalışanlar", btn_neu: "＋ Yeni Kontrol",
+  demo_banner: "🔶 ÖNİZLEME MODU – Veriler yalnızca bu cihazda yerel olarak kaydedilir.",
+  banner_cloud: "☁️ Veritabanına bağlı – tüm girişler otomatik olarak merkezi kaydedilir.",
+  banner_offline: "⚠️ Veritabanı bağlantısı yok – girişler yerel kaydedilir ve bir sonraki değişiklikte tekrar gönderilir.",
+  ueb_titel: "Kayıtlı Kontroller",
+  kopf_titel: "Araç ve İş Emri Bilgileri",
+  l_auftrag: "İş emri numarası", l_kennzeichen: "Plaka", l_fin: "Şasi No (FIN)",
+  l_fahrzeug: "Araç (Marka/Model)", l_km: "Kilometre", l_datum: "Tarih",
+  l_beanstandung: "Müşteri şikayeti",
+  ph_beanstandung: "İş emrine / arıza kontrol listesine göre şikayet",
+  schritte_titel: "Kontrol Adımları",
+  schritte_hinweis: '<span class="badge-pflicht">Zorunlu</span> işaretli alanlar, rapor kapatılmadan önce OK veya Uygun değil olarak değerlendirilmelidir (+ isim).',
+  badge_pflicht: "Zorunlu",
+  btn_ok: "✓ OK", btn_nok: "✗ Uygun değil",
+  opt_name: "– İsim –", opt_name_waehlen: "– İsim seçin –",
+  btn_details: "Detaylar ▾",
+  l_fehlercode: "Arıza kodu", l_sonstiges: "Diğer / Açıklama",
+  ph_sonstiges: "Kontrol adımıyla ilgili açıklama",
+  l_fotos: "Fotoğraflar",
+  dtc_titel: "Okunan Arıza Kodları (DTC)",
+  dtc_code: "Kod", dtc_sg: "Kontrol ünitesi", dtc_text: "Arıza metni", dtc_art: "Tür",
+  dtc_statisch: "statik", dtc_sporadisch: "ara sıra (sporadik)",
+  ph_sg: "Motor beyni", ph_fehlertext: "Arıza metni",
+  btn_zeile: "＋ Satır ekle",
+  mess_titel: "13. Parça Kontrolü – Hedef/Ölçülen değerler (kontrol noktalarını kendiniz adlandırın)",
+  mess_badge: "en az 1 satır zorunlu",
+  ph_bauteil: "Parça / kontrol noktası adı…", ph_soll: "Hedef", ph_ist: "Ölçülen",
+  ph_befund: "Bulguyu, değerlendirmeyi, bulunan arızayı ve ölçüm değerlerini girin…",
+  ph_auftrag: "Arama sürelerini, onarım sürelerini ve malzemeyi girin…",
+  abschluss_titel: "Onay ve Kapanış",
+  rolle_Techniker: "Teknisyen", rolle_Meister: "Usta (Meister)", rolle_Serviceberater: "Servis danışmanı", rolle_Azubi: "Çırak",
+  l_name: "İsim",
+  btn_zwischenspeichern: "💾 Ara kayıt",
+  btn_abschliessen: "✅ Tamamlandı olarak kapat",
+  btn_pdf: "🖨️ PDF / Yazdır (Almanca)",
+  progress: "Zorunlu alanlar",
+  chip_arbeit: "Devam ediyor", chip_fertig: "Tamamlandı",
+  modal_titel: "⚠️ Rapor henüz kapatılamaz",
+  modal_intro: "Şu zorunlu alanlar eksik:",
+  btn_verstanden: "Anladım",
+  ma_titel: "👥 Çalışan Yönetimi",
+  ma_intro: "Bu isimler tüm seçim alanlarında görünür. Kendiniz ekleyebilir, değiştirebilir ve silebilirsiniz.",
+  ph_maname: "Ad Soyad",
+  btn_anlegen: "＋ Ekle", btn_schliessen: "Kapat",
+  ma_leer: "Henüz çalışan eklenmedi.",
+  ueb_leer: "Henüz kayıtlı kontrol yok.",
+  ohne_auftrag: "iş emri numarasız",
+  save_ok: "✓ Kaydedildi", save_auto: "✓ Otomatik kaydedildi", save_fertig: "✓ Rapor tamamlandı",
+  alert_speicher_voll: "Depolama dolu – lütfen eski fotoğrafları/raporları silin.",
+  alert_name_eingeben: "Lütfen bir isim girin.",
+  alert_name_existiert: "Bu isim zaten mevcut.",
+  prompt_neuer_name: "Yeni isim:",
+  confirm_ma_loeschen: "gerçekten silinsin mi?",
+  confirm_bericht_loeschen: "Bu kontrol gerçekten silinsin mi?",
+  alert_fertig: "✅ Rapor TAMAMLANDI olarak işaretlendi ve kaydedildi.",
+  f_kopf: "Temel bilgiler", f_schritt: "Adım",
+  f_unbewertet: "henüz değerlendirilmedi (OK / Uygun değil)", f_name: "İsim eksik",
+  f_mess: "Parça kontrolü 13.1–13.5: en az bir satır eksiksiz doldurulmalı (ad, ölçülen değer, OK/Uygun değil, isim)",
+  f_techniker: "Onay: Teknisyen eksik", f_meister: "Onay: Usta eksik"
+}
+};
+function t(k) { return (TEXTE[sprache] && TEXTE[sprache][k]) || TEXTE.de[k] || k; }
+function rolleLabel(r) { return t("rolle_" + r) || r; }
+function stepText(def) { return sprache === "tr" && def.tr ? def.tr : def.text; }
+function applyStatic() {
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.innerHTML = t(el.dataset.i18n); });
+  document.getElementById("k_beanstandung").placeholder = t("ph_beanstandung");
+  document.getElementById("maNeuName").placeholder = t("ph_maname");
+  const sbtn = document.getElementById("sprachBtn");
+  if (sbtn) sbtn.textContent = sprache === "de" ? "TR Türkçe" : "DE Deutsch";
+  document.documentElement.lang = sprache;
+  aktualisiereBanner();
+}
+function toggleSprache() { setzeSprache(sprache === "de" ? "tr" : "de"); }
+function setzeSprache(l) {
+  sprache = l;
+  localStorage.setItem("stieber_sprache", l);
+  applyStatic();
+  if (bericht) {
+    renderSchritte();
+    document.getElementById("a_techniker").innerHTML = nameOptionenRolle(bericht.abschluss.techniker, null);
+    document.getElementById("a_meister").innerHTML = nameOptionenRolle(bericht.abschluss.meister, "Meister");
+    setzeStatusChip(); fortschritt();
+  }
+}
+/* Ausdruck/PDF immer auf Deutsch – auch bei Strg+P */
+let druckSprache = null;
+window.addEventListener("beforeprint", () => { if (sprache === "tr") { druckSprache = "tr"; setzeSprache("de"); } });
+window.addEventListener("afterprint", () => { if (druckSprache) { setzeSprache(druckSprache); druckSprache = null; } });
+
+/* ---------- Prüfschritte-Definition ---------- */
+const SCHRITTE = [
+  { nr: 1,  text: "Kundenbeanstandung lt. Auftrag & Fehler-Checkliste prüfen", tr: "Müşteri şikayetini iş emri ve arıza kontrol listesine göre kontrol et", pflicht: true },
+  { nr: 2,  text: "Probefahrt durchführen und Fehler reproduzieren", tr: "Test sürüşü yap ve arızayı yeniden oluştur", pflicht: true },
+  { nr: 3,  text: "Fehlerspeicher auslesen, ausdrucken und löschen", tr: "Arıza hafızasını oku, yazdır ve sil", pflicht: true, spezial: "dtc" },
+  { nr: 4,  text: "Fehler laut Checkliste (Kundenbeanstandung) reproduzieren", tr: "Arızayı kontrol listesine (müşteri şikayeti) göre yeniden oluştur", pflicht: false },
+  { nr: 5,  text: "Systemfunktionen und Bauteile ermitteln", tr: "Sistem fonksiyonlarını ve parçaları belirle", pflicht: true },
+  { nr: 6,  text: "Ist-Werte auslesen & Stellgliedtest durchführen", tr: "Gerçek değerleri oku ve aktüatör testi yap", pflicht: true },
+  { nr: 7,  text: "Sichtprüfung der betroffenen Komponenten", tr: "İlgili parçaların gözle kontrolü", pflicht: true },
+  { nr: 8,  text: "Bekannte Fehler & technische Informationen ESI, Hella Gutmann etc. prüfen", tr: "Bilinen arızaları ve teknik bilgileri kontrol et (ESI, Hella Gutmann vb.)", pflicht: false },
+  { nr: 9,  text: "ggf. Anfrage an ESI/Hella stellen", tr: "Gerekirse ESI/Hella'ya soru gönder", pflicht: false },
+  { nr: 10, text: "Chat GPT – ZLB – Motordaten – Fehlerprotokoll", tr: "Chat GPT – ZLB – Motor verileri – Arıza protokolü", pflicht: false },
+  { nr: 11, text: "Fehlersuche planen – Strategie festlegen", tr: "Arıza aramayı planla – strateji belirle", pflicht: true },
+  { nr: 12, text: "Prüfanleitung ausdrucken & abarbeiten", tr: "Kontrol talimatını yazdır ve uygula", pflicht: false },
+  { nr: 131, display: "13.1", custom: true },
+  { nr: 132, display: "13.2", custom: true },
+  { nr: 133, display: "13.3", custom: true },
+  { nr: 134, display: "13.4", custom: true },
+  { nr: 135, display: "13.5", custom: true },
+  { nr: 140, display: "14", text: "Befund (Auswertung der Prüfung, Fehler gefunden, defektes Teil & Messwert)", tr: "Bulgu (kontrolün değerlendirilmesi, arıza bulundu, arızalı parça ve ölçüm değeri)", pflicht: true, gross: true, ph: "ph_befund" },
+  { nr: 150, display: "15", text: "Auftrag schreiben – Arbeitsaufwand und Material", tr: "İş emrini yaz – işçilik süresi ve malzeme", pflicht: true, gross: true, ph: "ph_auftrag" },
+  { nr: 19, display: "16", text: "Teileliste und Auftrag an Service-Berater/in", tr: "Parça listesini ve iş emrini servis danışmanına ilet", pflicht: true },
+  { nr: 20, display: "17", text: "Neuteil einbauen", tr: "Yeni parçayı tak", pflicht: false },
+  { nr: 21, display: "18", text: "Fahrzeug vor Probefahrt prüfen", tr: "Test sürüşünden önce aracı kontrol et", pflicht: false },
+  { nr: 22, display: "19", text: "Probefahrt durchführen", tr: "Test sürüşü yap", pflicht: true },
+  { nr: 23, display: "20", text: "Techniker – Endkontrolle und Fahrzeug nach Kundenbeanstandung prüfen", tr: "Teknisyen – Son kontrol ve aracı müşteri şikayetine göre kontrol et", pflicht: true },
+  { nr: 231, display: "21", text: "Fehlerspeicher nach Reparatur auslesen", tr: "Onarımdan sonra arıza hafızasını oku", pflicht: true },
+  { nr: 24, display: "22", text: "Meister – Endkontrolle, Probefahrt und Fahrzeug nach Kundenbeanstandung prüfen", tr: "Usta – Son kontrol, test sürüşü ve aracı müşteri şikayetine göre kontrol et", pflicht: true },
+  { nr: 25, display: "23", text: "Meister – Auftrag prüfen, ggf. ergänzen und in Fach zum Rechnung schreiben legen", tr: "Usta – İş emrini kontrol et, gerekirse tamamla ve fatura yazma gözüne koy", pflicht: true },
+  { nr: 26, display: "24", text: "Service-Berater Bescheid sagen", tr: "Servis danışmanına haber ver", pflicht: true }
+];
+
+/* ---------- Zustand ---------- */
+let bericht = null;      // aktueller Bericht
+let mitarbeiter = [];    // [{name, rolle}]
+let saveTimer = null;
+
+function leererSchritt() { return { status: "", name: "", titel: "", soll: "", ist: "", befund: "", fehlercode: "", sonstiges: "", fotos: [] }; }
+function leererBericht() {
+  const s = {};
+  SCHRITTE.forEach(x => s[x.nr] = leererSchritt());
+  return {
+    id: "P" + Date.now(),
+    status: "in_arbeit",
+    angelegt: new Date().toISOString(),
+    kopf: { auftrag: "", kennzeichen: "", fin: "", fahrzeug: "", km: "", datum: heute(), beanstandung: "" },
+    schritte: s,
+    dtcs: [leereDtcZeile(), leereDtcZeile(), leereDtcZeile()],
+    abschluss: { techniker: "", technikerDatum: "", meister: "", meisterDatum: "" }
+  };
+}
+function leereDtcZeile() { return { code: "", steuergeraet: "", text: "", art: "statisch" }; }
+function heute() { return new Date().toISOString().slice(0, 10); }
+
+/* ---------- Speicher (Supabase + localStorage als Offline-Cache) ---------- */
+async function ladeMitarbeiter() {
+  try { mitarbeiter = JSON.parse(localStorage.getItem("stieber_ma")) || []; } catch(e) { mitarbeiter = []; }
+  if (CLOUD) {
+    try {
+      const rows = await sb("fs_mitarbeiter?select=name,rolle&order=name.asc");
+      if (rows && rows.length) { mitarbeiter = rows; setzeCloudStatus(true); }
+    } catch(e) { setzeCloudStatus(false); }
+  }
+  if (mitarbeiter.length === 0) {
+    mitarbeiter = [{ name: "Oliver Stieber", rolle: "Meister" }];
+  }
+  speichereMitarbeiter();
+}
+function speichereMitarbeiter() { localStorage.setItem("stieber_ma", JSON.stringify(mitarbeiter)); }
+function alleBerichte() {
+  try { return JSON.parse(localStorage.getItem("stieber_berichte")) || {}; } catch(e) { return {}; }
+}
+function speichern(meldung) {
+  if (!bericht) return;
+  const alle = alleBerichte();
+  alle[bericht.id] = bericht;
+  try {
+    localStorage.setItem("stieber_berichte", JSON.stringify(alle));
+    if (meldung) zeigeSaveInfo(t("save_ok") + " " + new Date().toLocaleTimeString("de-DE", {hour:"2-digit",minute:"2-digit"}));
+  } catch(e) {
+    alert(t("alert_speicher_voll"));
+  }
+  cloudSpeichern();
+}
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { speichern(false); zeigeSaveInfo(t("save_auto")); }, 800);
+}
+function zeigeSaveInfo(t) {
+  const el = document.getElementById("saveInfo");
+  el.textContent = t;
+  setTimeout(() => { if (el.textContent === t) el.textContent = ""; }, 4000);
+}
+
+/* ---------- Rendering: Prüfschritte ---------- */
+function renderSchritte() {
+  const wrap = document.getElementById("schritteListe");
+  wrap.innerHTML = "";
+  SCHRITTE.forEach(def => {
+    const st = bericht.schritte[def.nr];
+    if (def.nr === 131) {
+      const ue = document.createElement("div");
+      ue.className = "mess-ueberschrift";
+      ue.innerHTML = t("mess_titel") + ' <span class="badge-pflicht">' + t("mess_badge") + '</span>';
+      wrap.appendChild(ue);
+    }
+    const div = document.createElement("div");
+    div.className = "schritt" + statusKlasse(st.status);
+    div.id = "schritt_" + def.nr;
+
+    const kopf = document.createElement("div");
+    kopf.className = "schritt-kopf";
+    const mitte = def.custom
+      ? `<input class="custom-titel" value="${esc(st.titel)}" placeholder="${t("ph_bauteil")}" oninput="setzeSchrittFeld(${def.nr}, 'titel', this.value)">
+         <input class="custom-wert" value="${esc(st.soll)}" placeholder="${t("ph_soll")}" oninput="setzeSchrittFeld(${def.nr}, 'soll', this.value)">
+         <input class="custom-wert" value="${esc(st.ist)}" placeholder="${t("ph_ist")}" oninput="setzeSchrittFeld(${def.nr}, 'ist', this.value)">`
+      : `<div class="schritt-text">${stepText(def)}${def.pflicht ? '<span class="badge-pflicht">' + t("badge_pflicht") + '</span>' : ""}</div>`;
+    kopf.innerHTML = `
+      <div class="schritt-nr"${def.custom ? ' style="font-size:11px;"' : ""}>${def.display || def.nr}</div>
+      ${mitte}
+      <div class="status-btns">
+        <button class="status-btn${st.status === "ok" ? " ok-an" : ""}" onclick="setStatus(${def.nr}, 'ok')">${t("btn_ok")}</button>
+        <button class="status-btn${st.status === "nok" ? " nok-an" : ""}" onclick="setStatus(${def.nr}, 'nok')">${t("btn_nok")}</button>
+      </div>
+      <div class="schritt-name">
+        <select onchange="setzeSchrittFeld(${def.nr}, 'name', this.value)">${nameOptionen(st.name)}</select>
+      </div>
+      <button class="detail-btn" onclick="toggleDetail(${def.nr})">${t("btn_details")}</button>
+    `;
+    div.appendChild(kopf);
+
+    if (def.gross) {
+      const gw = document.createElement("div");
+      gw.className = "gross-wrap";
+      gw.innerHTML = `<textarea class="gross-feld" placeholder="${t(def.ph)}" oninput="setzeSchrittFeld(${def.nr}, 'befund', this.value)">${esc(st.befund)}</textarea>`;
+      div.appendChild(gw);
+    }
+
+    const detail = document.createElement("div");
+    detail.className = "schritt-detail";
+    detail.id = "detail_" + def.nr;
+    let inner = `
+      <div class="detail-grid">
+        <div class="field"><label>${t("l_fehlercode")}</label>
+          <input value="${esc(st.fehlercode)}" placeholder="z.B. P0301" oninput="setzeSchrittFeld(${def.nr}, 'fehlercode', this.value)"></div>
+        <div class="field"><label>${t("l_sonstiges")}</label>
+          <input value="${esc(st.sonstiges)}" placeholder="${t("ph_sonstiges")}" oninput="setzeSchrittFeld(${def.nr}, 'sonstiges', this.value)"></div>
+      </div>
+      <div class="foto-zeile">
+        <span style="font-size:11px;font-weight:600;color:var(--grau-dunkel);text-transform:uppercase;">${t("l_fotos")}</span>
+        <span id="fotos_${def.nr}"></span>
+        <button class="foto-add" onclick="document.getElementById('fotoInput_${def.nr}').click()">📷</button>
+        <input type="file" id="fotoInput_${def.nr}" accept="image/*" capture="environment" style="display:none" onchange="fotoHinzu(${def.nr}, this)">
+      </div>`;
+
+    if (def.spezial === "dtc") {
+      inner += `
+      <div style="margin-top:14px;">
+        <strong style="font-size:13px;color:var(--blau-dunkel);">${t("dtc_titel")}</strong>
+        <div class="tabellen-scroll"><table class="subtabelle" id="dtcTabelle">
+          <thead><tr><th style="width:110px;">${t("dtc_code")}</th><th style="width:150px;">${t("dtc_sg")}</th><th>${t("dtc_text")}</th><th style="width:110px;">${t("dtc_art")}</th><th style="width:30px;"></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <button class="btn btn-grau btn-klein" style="margin-top:8px;" onclick="dtcZeileHinzu()">${t("btn_zeile")}</button>
+      </div>`;
+    }
+    detail.innerHTML = inner;
+    div.appendChild(detail);
+    wrap.appendChild(div);
+    renderFotos(def.nr);
+  });
+  renderDtcs();
+}
+
+function nameOptionen(gewaehlt) {
+  let o = `<option value="">${t("opt_name")}</option>`;
+  mitarbeiter.forEach(m => {
+    o += `<option value="${esc(m.name)}"${m.name === gewaehlt ? " selected" : ""}>${esc(m.name)}</option>`;
+  });
+  return o;
+}
+function esc(s) { return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+
+/* ---------- Schritt-Interaktion ---------- */
+function statusKlasse(s) { return s === "ok" ? " erledigt" : s === "nok" ? " nok" : ""; }
+function setStatus(nr, wert) {
+  const st = bericht.schritte[nr];
+  st.status = st.status === wert ? "" : wert;   // erneutes Tippen hebt Auswahl auf
+  if (st.status && !st.name && mitarbeiter.length === 1) st.name = mitarbeiter[0].name;
+  const div = document.getElementById("schritt_" + nr);
+  div.className = "schritt" + statusKlasse(st.status);
+  const btns = div.querySelectorAll(".status-btn");
+  btns[0].classList.toggle("ok-an", st.status === "ok");
+  btns[1].classList.toggle("nok-an", st.status === "nok");
+  div.querySelector(".schritt-name select").innerHTML = nameOptionen(st.name);
+  fortschritt(); autoSave();
+}
+function setzeSchrittFeld(nr, feld, wert) {
+  bericht.schritte[nr][feld] = wert;
+  if (feld === "name") { fortschritt(); document.getElementById("schritt_" + nr).classList.remove("fehlt"); }
+  autoSave();
+}
+function toggleDetail(nr) {
+  document.getElementById("detail_" + nr).classList.toggle("offen");
+}
+
+/* ---------- Fotos ---------- */
+function fotoHinzu(nr, input) {
+  const datei = input.files[0];
+  if (!datei) return;
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = e => {
+    img.onload = () => {
+      const max = 900;
+      const skala = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = img.width * skala; c.height = img.height * skala;
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      bericht.schritte[nr].fotos.push(c.toDataURL("image/jpeg", 0.7));
+      renderFotos(nr); speichern(false);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(datei);
+  input.value = "";
+}
+function fotoLoeschen(nr, i) {
+  bericht.schritte[nr].fotos.splice(i, 1);
+  renderFotos(nr); speichern(false);
+}
+function renderFotos(nr) {
+  const el = document.getElementById("fotos_" + nr);
+  if (!el) return;
+  el.innerHTML = bericht.schritte[nr].fotos.map((f, i) =>
+    `<span class="foto-thumb"><img src="${f}"><button onclick="fotoLoeschen(${nr},${i})">✕</button></span>`).join(" ");
+}
+
+/* ---------- DTC-Tabelle ---------- */
+function renderDtcs() {
+  const tb = document.querySelector("#dtcTabelle tbody");
+  if (!tb) return;
+  tb.innerHTML = "";
+  bericht.dtcs.forEach((d, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input value="${esc(d.code)}" placeholder="P0301" oninput="bericht.dtcs[${i}].code=this.value;autoSave()"></td>
+      <td><input value="${esc(d.steuergeraet)}" placeholder="${t("ph_sg")}" oninput="bericht.dtcs[${i}].steuergeraet=this.value;autoSave()"></td>
+      <td><input value="${esc(d.text)}" placeholder="${t("ph_fehlertext")}" oninput="bericht.dtcs[${i}].text=this.value;autoSave()"></td>
+      <td><select onchange="bericht.dtcs[${i}].art=this.value;autoSave()">
+        <option value="statisch"${d.art==="statisch"?" selected":""}>${t("dtc_statisch")}</option>
+        <option value="sporadisch"${d.art==="sporadisch"?" selected":""}>${t("dtc_sporadisch")}</option>
+      </select></td>
+      <td><button class="zeile-loesch" onclick="bericht.dtcs.splice(${i},1);renderDtcs();autoSave()">🗑</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function dtcZeileHinzu() { bericht.dtcs.push(leereDtcZeile()); renderDtcs(); }
+
+/* ---------- Kopfdaten & Abschluss binden ---------- */
+const KOPF_FELDER = { k_auftrag:"auftrag", k_kennzeichen:"kennzeichen", k_fin:"fin", k_fahrzeug:"fahrzeug", k_km:"km", k_datum:"datum", k_beanstandung:"beanstandung" };
+function bindeKopf() {
+  Object.entries(KOPF_FELDER).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    el.value = bericht.kopf[key] || "";
+    el.oninput = () => { bericht.kopf[key] = el.value; el.classList.remove("feld-fehlt"); fortschritt(); autoSave(); };
+  });
+  const at = document.getElementById("a_techniker");
+  const am = document.getElementById("a_meister");
+  at.innerHTML = nameOptionenRolle(bericht.abschluss.techniker, null);
+  am.innerHTML = nameOptionenRolle(bericht.abschluss.meister, "Meister");
+  at.onchange = () => { bericht.abschluss.techniker = at.value; if (at.value && !document.getElementById("a_techniker_datum").value) { document.getElementById("a_techniker_datum").value = heute(); bericht.abschluss.technikerDatum = heute(); } at.classList.remove("feld-fehlt"); fortschritt(); autoSave(); };
+  am.onchange = () => { bericht.abschluss.meister = am.value; if (am.value && !document.getElementById("a_meister_datum").value) { document.getElementById("a_meister_datum").value = heute(); bericht.abschluss.meisterDatum = heute(); } am.classList.remove("feld-fehlt"); fortschritt(); autoSave(); };
+  document.getElementById("a_techniker_datum").value = bericht.abschluss.technikerDatum || "";
+  document.getElementById("a_meister_datum").value = bericht.abschluss.meisterDatum || "";
+  document.getElementById("a_techniker_datum").onchange = e => { bericht.abschluss.technikerDatum = e.target.value; autoSave(); };
+  document.getElementById("a_meister_datum").onchange = e => { bericht.abschluss.meisterDatum = e.target.value; autoSave(); };
+}
+function nameOptionenRolle(gewaehlt, rolle) {
+  let liste = rolle ? mitarbeiter.filter(m => m.rolle === rolle) : mitarbeiter;
+  if (liste.length === 0) liste = mitarbeiter;
+  let o = `<option value="">${t("opt_name_waehlen")}</option>`;
+  liste.forEach(m => o += `<option value="${esc(m.name)}"${m.name === gewaehlt ? " selected" : ""}>${esc(m.name)} (${esc(rolleLabel(m.rolle))})</option>`);
+  return o;
+}
+
+/* ---------- Pflichtfeld-Logik & Fortschritt ---------- */
+function pruefePflicht() {
+  const fehlt = [];
+  // Kopfdaten
+  const kopfPflicht = [["k_auftrag","l_auftrag"],["k_kennzeichen","l_kennzeichen"],["k_km","l_km"],["k_beanstandung","l_beanstandung"]];
+  kopfPflicht.forEach(([id, key]) => {
+    if (!document.getElementById(id).value.trim()) fehlt.push({ typ: "kopf", id, label: t("f_kopf") + ": " + t(key) });
+  });
+  // Pflicht-Schritte: OK/nicht OK bewertet + Name
+  SCHRITTE.filter(s => s.pflicht).forEach(s => {
+    const st = bericht.schritte[s.nr];
+    if (!st.status) fehlt.push({ typ: "schritt", nr: s.nr, label: `${t("f_schritt")} ${s.display || s.nr}: ${stepText(s)} – ${t("f_unbewertet")}` });
+    else if (!st.name) fehlt.push({ typ: "schritt", nr: s.nr, label: `${t("f_schritt")} ${s.display || s.nr}: ${t("f_name")}` });
+  });
+  // Bauteileprüfung 13.1–13.5: mindestens eine Zeile vollständig
+  const messVollstaendig = SCHRITTE.filter(s => s.custom).some(s => {
+    const st = bericht.schritte[s.nr];
+    return st.titel.trim() && st.ist.trim() && st.status && st.name;
+  });
+  if (!messVollstaendig) fehlt.push({ typ: "schritt", nr: 131, label: t("f_mess") });
+  // Freigaben
+  if (!bericht.abschluss.techniker) fehlt.push({ typ: "abschluss", id: "a_techniker", label: t("f_techniker") });
+  if (!bericht.abschluss.meister) fehlt.push({ typ: "abschluss", id: "a_meister", label: t("f_meister") });
+  return fehlt;
+}
+function fortschritt() {
+  const gesamt = 4 + SCHRITTE.filter(s => s.pflicht).length + 1 + 2; // Kopf(4) + Pflichtschritte + Bauteileprüfung(1) + 2 Freigaben
+  const offen = pruefePflicht().length;
+  const erledigt = gesamt - Math.min(offen, gesamt);
+  document.getElementById("progressText").textContent = `${t("progress")}: ${erledigt} / ${gesamt}`;
+  const fill = document.getElementById("progressFill");
+  fill.style.width = (erledigt / gesamt * 100) + "%";
+  fill.classList.toggle("unvollst", offen > 0);
+}
+function abschliessen() {
+  const fehlt = pruefePflicht();
+  if (fehlt.length > 0) {
+    document.getElementById("pflichtListe").innerHTML = fehlt.map(f => `<li>${esc(f.label)}</li>`).join("");
+    document.getElementById("modalPflicht").classList.add("offen");
+    fehlt.forEach(f => {
+      if (f.typ === "kopf" || f.typ === "abschluss") document.getElementById(f.id).classList.add("feld-fehlt");
+      if (f.typ === "schritt") document.getElementById("schritt_" + f.nr).classList.add("fehlt");
+    });
+    const erster = fehlt[0];
+    const ziel = erster.typ === "schritt" ? document.getElementById("schritt_" + erster.nr) : document.getElementById(erster.id);
+    if (ziel) setTimeout(() => ziel.scrollIntoView({ behavior: "smooth", block: "center" }), 200);
+    return;
+  }
+  bericht.status = "erledigt";
+  bericht.abgeschlossen = new Date().toISOString();
+  speichern(false);
+  setzeStatusChip();
+  zeigeSaveInfo(t("save_fertig"));
+  alert(t("alert_fertig") + "\n\n" + t("l_auftrag") + ": " + bericht.kopf.auftrag + "\n" + t("l_kennzeichen") + ": " + bericht.kopf.kennzeichen);
+}
+function setzeStatusChip() {
+  const chip = document.getElementById("statusChip");
+  if (bericht.status === "erledigt") { chip.textContent = t("chip_fertig"); chip.className = "chip chip-fertig"; }
+  else { chip.textContent = t("chip_arbeit"); chip.className = "chip chip-arbeit"; }
+}
+
+/* ---------- Mitarbeiterverwaltung ---------- */
+function oeffneMitarbeiter() {
+  renderMitarbeiter();
+  document.getElementById("modalMitarbeiter").classList.add("offen");
+}
+function renderMitarbeiter() {
+  const el = document.getElementById("maListe");
+  el.innerHTML = mitarbeiter.length === 0 ? `<p style="font-size:13px;color:var(--grau-dunkel);">${t("ma_leer")}</p>` : "";
+  mitarbeiter.forEach((m, i) => {
+    const z = document.createElement("div");
+    z.className = "ma-zeile";
+    z.innerHTML = `
+      <span class="ma-name">${esc(m.name)}</span>
+      <span class="ma-rolle">${esc(rolleLabel(m.rolle))}</span>
+      <button class="btn btn-grau btn-klein" onclick="mitarbeiterUmbenennen(${i})">✏️</button>
+      <button class="btn btn-rot btn-klein" onclick="mitarbeiterLoeschen(${i})">🗑</button>`;
+    el.appendChild(z);
+  });
+}
+function mitarbeiterAnlegen() {
+  const name = document.getElementById("maNeuName").value.trim();
+  const rolle = document.getElementById("maNeuRolle").value;
+  if (!name) { alert(t("alert_name_eingeben")); return; }
+  if (mitarbeiter.some(m => m.name.toLowerCase() === name.toLowerCase())) { alert(t("alert_name_existiert")); return; }
+  mitarbeiter.push({ name, rolle });
+  speichereMitarbeiter();
+  cloudMitarbeiter("POST", "fs_mitarbeiter", { name, rolle });
+  document.getElementById("maNeuName").value = "";
+  renderMitarbeiter(); aktualisiereNamensfelder();
+}
+function mitarbeiterUmbenennen(i) {
+  const neu = prompt(t("prompt_neuer_name"), mitarbeiter[i].name);
+  if (!neu || !neu.trim()) return;
+  const alt = mitarbeiter[i].name;
+  mitarbeiter[i].name = neu.trim();
+  // Namen in laufendem Bericht mitziehen
+  Object.values(bericht.schritte).forEach(st => { if (st.name === alt) st.name = neu.trim(); });
+  if (bericht.abschluss.techniker === alt) bericht.abschluss.techniker = neu.trim();
+  if (bericht.abschluss.meister === alt) bericht.abschluss.meister = neu.trim();
+  speichereMitarbeiter(); speichern(false);
+  cloudMitarbeiter("PATCH", "fs_mitarbeiter?name=eq." + encodeURIComponent(alt), { name: neu.trim() });
+  renderMitarbeiter(); aktualisiereNamensfelder();
+}
+function mitarbeiterLoeschen(i) {
+  if (!confirm(`"${mitarbeiter[i].name}" ${t("confirm_ma_loeschen")}`)) return;
+  const geloescht = mitarbeiter[i].name;
+  mitarbeiter.splice(i, 1);
+  speichereMitarbeiter();
+  cloudMitarbeiter("DELETE", "fs_mitarbeiter?name=eq." + encodeURIComponent(geloescht));
+  renderMitarbeiter(); aktualisiereNamensfelder();
+}
+function aktualisiereNamensfelder() {
+  SCHRITTE.forEach(def => {
+    const sel = document.querySelector(`#schritt_${def.nr} .schritt-name select`);
+    if (sel) sel.innerHTML = nameOptionen(bericht.schritte[def.nr].name);
+  });
+  document.getElementById("a_techniker").innerHTML = nameOptionenRolle(bericht.abschluss.techniker, null);
+  document.getElementById("a_meister").innerHTML = nameOptionenRolle(bericht.abschluss.meister, "Meister");
+}
+
+/* ---------- Übersicht / Zwischenspeichern-Wiederaufnahme ---------- */
+function zeigeUebersicht() {
+  renderUebersicht();
+  document.getElementById("modalUebersicht").classList.add("offen");
+}
+async function renderUebersicht() {
+  const liste = document.getElementById("berichtListe");
+  let alle = Object.values(alleBerichte());
+  if (CLOUD) {
+    try {
+      const rows = await sb("fs_pruefungen?select=id,kennzeichen,auftrag,fahrzeug,status,angelegt&order=angelegt.desc");
+      if (rows) {
+        alle = rows.map(r0 => ({ id: r0.id, status: r0.status, angelegt: r0.angelegt || "", kopf: { kennzeichen: r0.kennzeichen || "", auftrag: r0.auftrag || "", fahrzeug: r0.fahrzeug || "" } }));
+        setzeCloudStatus(true);
+      }
+    } catch(e) { setzeCloudStatus(false); }
+  }
+  alle.sort((a, b) => (b.angelegt || "").localeCompare(a.angelegt || ""));
+  liste.innerHTML = alle.length === 0 ? `<p style="font-size:13px;color:var(--grau-dunkel);">${t("ueb_leer")}</p>` : "";
+  alle.forEach(b => {
+    const z = document.createElement("div");
+    z.className = "bericht-zeile";
+    z.innerHTML = `
+      <span class="bz-titel">${esc(b.kopf.kennzeichen || "–")} · ${esc(b.kopf.auftrag || t("ohne_auftrag"))}</span>
+      <span class="bz-info">${esc(b.kopf.fahrzeug || "")} · ${new Date(b.angelegt).toLocaleDateString("de-DE")}</span>
+      <span class="chip ${b.status === "erledigt" ? "chip-fertig" : "chip-arbeit"}">${b.status === "erledigt" ? t("chip_fertig") : t("chip_arbeit")}</span>
+      <button class="btn btn-rot btn-klein" onclick="event.stopPropagation();berichtLoeschen('${b.id}')">🗑</button>`;
+    z.onclick = () => { ladeBericht(b.id); schliesseModal("modalUebersicht"); };
+    liste.appendChild(z);
+  });
+}
+function berichtLoeschen(id) {
+  if (!confirm(t("confirm_bericht_loeschen"))) return;
+  const alle = alleBerichte();
+  delete alle[id];
+  localStorage.setItem("stieber_berichte", JSON.stringify(alle));
+  if (CLOUD) sb("fs_pruefungen?id=eq." + encodeURIComponent(id), { method: "DELETE" }).catch(() => setzeCloudStatus(false));
+  if (bericht && bericht.id === id) neuePruefung();
+  renderUebersicht();
+}
+async function ladeBericht(id) {
+  let b = alleBerichte()[id];
+  if (CLOUD) {
+    try {
+      const rows = await sb("fs_pruefungen?id=eq." + encodeURIComponent(id) + "&select=daten");
+      if (rows && rows[0] && rows[0].daten) { b = rows[0].daten; setzeCloudStatus(true); }
+    } catch(e) { setzeCloudStatus(false); }
+  }
+  if (!b) return;
+  bericht = b;
+  // fehlende Felder ergänzen (Abwärtskompatibilität)
+  SCHRITTE.forEach(s => { if (!bericht.schritte[s.nr]) bericht.schritte[s.nr] = leererSchritt(); });
+  Object.values(bericht.schritte).forEach(st => {
+    if (st.status === undefined) st.status = st.ok ? "ok" : "";
+    ["titel", "soll", "ist", "befund"].forEach(k => { if (st[k] === undefined) st[k] = ""; });
+  });
+  // alte Messtabelle (falls vorhanden) in die Zeilen 13.1–13.5 übernehmen
+  if (Array.isArray(bericht.messungen)) {
+    bericht.messungen.filter(m => m.bauteil || m.ist).slice(0, 5).forEach((m, i) => {
+      const st = bericht.schritte[131 + i];
+      if (st && !st.titel) {
+        st.titel = m.bauteil; st.soll = m.soll;
+        st.ist = m.ist + (m.einheit && m.ist ? " " + m.einheit : "");
+        st.status = m.bewertung === "nio" ? "nok" : m.bewertung === "ok" ? "ok" : "";
+      }
+    });
+    delete bericht.messungen;
+  }
+  const cache = alleBerichte(); cache[bericht.id] = bericht;
+  try { localStorage.setItem("stieber_berichte", JSON.stringify(cache)); } catch(e) {}
+  bindeKopf(); renderSchritte(); setzeStatusChip(); fortschritt();
+  localStorage.setItem("stieber_aktuell", id);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function neuePruefung() {
+  bericht = leererBericht();
+  speichern(false);
+  localStorage.setItem("stieber_aktuell", bericht.id);
+  schliesseModal("modalUebersicht");
+  bindeKopf(); renderSchritte(); setzeStatusChip(); fortschritt();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ---------- Modal ---------- */
+function schliesseModal(id) { document.getElementById(id).classList.remove("offen"); }
+document.querySelectorAll(".modal-hg").forEach(m => m.addEventListener("click", e => { if (e.target === m) m.classList.remove("offen"); }));
+
+/* ---------- Start ---------- */
+(async () => {
+  await ladeMitarbeiter();
+  applyStatic();
+  const letzteId = localStorage.getItem("stieber_aktuell");
+  const gespeicherte = alleBerichte();
+  if (letzteId && gespeicherte[letzteId]) { await ladeBericht(letzteId); }
+  else neuePruefung();
+})();
+</script>
+</body>
+</html>
