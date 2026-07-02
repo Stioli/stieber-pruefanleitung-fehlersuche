@@ -353,12 +353,13 @@
   <div class="card" id="kopfCard">
     <h2><span data-i18n="kopf_titel">Fahrzeug- &amp; Auftragsdaten</span> <span class="chip chip-arbeit" id="statusChip">In Arbeit</span></h2>
     <div class="grid">
-      <div class="field"><label><span data-i18n="l_auftrag">Auftragsnummer</span> <span class="pflicht-stern">*</span></label><input id="k_auftrag" data-pflicht="1" placeholder="z.B. 2026-1234"></div>
-      <div class="field"><label><span data-i18n="l_kennzeichen">Kennzeichen</span> <span class="pflicht-stern">*</span></label><input id="k_kennzeichen" data-pflicht="1" placeholder="S-XX 1234" style="text-transform:uppercase;"></div>
-      <div class="field"><label><span data-i18n="l_fin">FIN</span></label><input id="k_fin" maxlength="17" placeholder="17-stellig"></div>
+      <div class="field"><label><span data-i18n="l_kunde">Kunde</span> <span class="pflicht-stern">*</span></label><input id="k_kunde" data-pflicht="1" placeholder="Name des Kunden"></div>
       <div class="field"><label><span data-i18n="l_fahrzeug">Fahrzeug (Marke/Modell)</span></label><input id="k_fahrzeug" placeholder="z.B. VW Golf VII 1.4 TSI"></div>
+      <div class="field"><label><span data-i18n="l_kennzeichen">Kennzeichen</span> <span class="pflicht-stern">*</span></label><input id="k_kennzeichen" data-pflicht="1" placeholder="S-XX 1234" style="text-transform:uppercase;"></div>
       <div class="field"><label><span data-i18n="l_km">km-Stand</span> <span class="pflicht-stern">*</span></label><input id="k_km" data-pflicht="1" type="number" placeholder="z.B. 89500"></div>
+      <div class="field"><label><span data-i18n="l_auftrag">Auftragsnummer</span> <span class="pflicht-stern">*</span></label><input id="k_auftrag" data-pflicht="1" placeholder="z.B. 2026-1234"></div>
       <div class="field"><label><span data-i18n="l_datum">Datum</span></label><input id="k_datum" type="date"></div>
+      <div class="field"><label><span data-i18n="l_fin">FIN</span></label><input id="k_fin" maxlength="17" placeholder="17-stellig"></div>
     </div>
     <div class="field" style="margin-top:12px;">
       <label><span data-i18n="l_beanstandung">Kundenbeanstandung</span> <span class="pflicht-stern">*</span></label>
@@ -524,10 +525,12 @@ de: {
   banner_offline: "⚠️ Keine Verbindung zur Datenbank – Eingaben werden lokal gespeichert und bei der nächsten Änderung erneut übertragen.",
   ueb_titel: "Gespeicherte Prüfungen",
   kopf_titel: "Fahrzeug- &amp; Auftragsdaten",
+  l_kunde: "Kunde",
   l_auftrag: "Auftragsnummer", l_kennzeichen: "Kennzeichen", l_fin: "FIN",
   l_fahrzeug: "Fahrzeug (Marke/Modell)", l_km: "km-Stand", l_datum: "Datum",
   l_beanstandung: "Kundenbeanstandung",
   ph_beanstandung: "Beanstandung laut Auftrag / Fehler-Checkliste",
+  ph_kunde: "Name des Kunden",
   schritte_titel: "Prüfschritte",
   schritte_hinweis: 'Felder mit <span class="badge-pflicht">Pflicht</span> müssen mit OK oder nicht OK bewertet sein (+ Name), bevor der Bericht abgeschlossen werden kann.',
   badge_pflicht: "Pflicht",
@@ -586,10 +589,12 @@ tr: {
   banner_offline: "⚠️ Veritabanı bağlantısı yok – girişler yerel kaydedilir ve bir sonraki değişiklikte tekrar gönderilir.",
   ueb_titel: "Kayıtlı Kontroller",
   kopf_titel: "Araç ve İş Emri Bilgileri",
+  l_kunde: "Müşteri",
   l_auftrag: "İş emri numarası", l_kennzeichen: "Plaka", l_fin: "Şasi No (FIN)",
   l_fahrzeug: "Araç (Marka/Model)", l_km: "Kilometre", l_datum: "Tarih",
   l_beanstandung: "Müşteri şikayeti",
   ph_beanstandung: "İş emrine / arıza kontrol listesine göre şikayet",
+  ph_kunde: "Müşterinin adı",
   schritte_titel: "Kontrol Adımları",
   schritte_hinweis: '<span class="badge-pflicht">Zorunlu</span> işaretli alanlar, rapor kapatılmadan önce OK veya Uygun değil olarak değerlendirilmelidir (+ isim).',
   badge_pflicht: "Zorunlu",
@@ -647,6 +652,7 @@ function stepText(def) { return sprache === "tr" && def.tr ? def.tr : def.text; 
 function applyStatic() {
   document.querySelectorAll("[data-i18n]").forEach(el => { el.innerHTML = t(el.dataset.i18n); });
   document.getElementById("k_beanstandung").placeholder = t("ph_beanstandung");
+  document.getElementById("k_kunde").placeholder = t("ph_kunde");
   document.getElementById("maNeuName").placeholder = t("ph_maname");
   const sbtn = document.getElementById("sprachBtn");
   if (sbtn) sbtn.textContent = sprache === "de" ? "TR Türkçe" : "DE Deutsch";
@@ -715,7 +721,7 @@ function leererBericht() {
     id: "P" + Date.now(),
     status: "in_arbeit",
     angelegt: new Date().toISOString(),
-    kopf: { auftrag: "", kennzeichen: "", fin: "", fahrzeug: "", km: "", datum: heute(), beanstandung: "" },
+    kopf: { kunde: "", auftrag: "", kennzeichen: "", fin: "", fahrzeug: "", km: "", datum: heute(), beanstandung: "" },
     schritte: s,
     dtcs: [leereDtcZeile(), leereDtcZeile(), leereDtcZeile()],
     abschluss: { techniker: "", technikerDatum: "", meister: "", meisterDatum: "" }
@@ -930,7 +936,7 @@ function renderDtcs() {
 function dtcZeileHinzu() { bericht.dtcs.push(leereDtcZeile()); renderDtcs(); }
 
 /* ---------- Kopfdaten & Abschluss binden ---------- */
-const KOPF_FELDER = { k_auftrag:"auftrag", k_kennzeichen:"kennzeichen", k_fin:"fin", k_fahrzeug:"fahrzeug", k_km:"km", k_datum:"datum", k_beanstandung:"beanstandung" };
+const KOPF_FELDER = { k_kunde:"kunde", k_auftrag:"auftrag", k_kennzeichen:"kennzeichen", k_fin:"fin", k_fahrzeug:"fahrzeug", k_km:"km", k_datum:"datum", k_beanstandung:"beanstandung" };
 function bindeKopf() {
   Object.entries(KOPF_FELDER).forEach(([id, key]) => {
     const el = document.getElementById(id);
@@ -960,7 +966,7 @@ function nameOptionenRolle(gewaehlt, rolle) {
 function pruefePflicht() {
   const fehlt = [];
   // Kopfdaten
-  const kopfPflicht = [["k_auftrag","l_auftrag"],["k_kennzeichen","l_kennzeichen"],["k_km","l_km"],["k_beanstandung","l_beanstandung"]];
+  const kopfPflicht = [["k_kunde","l_kunde"],["k_auftrag","l_auftrag"],["k_kennzeichen","l_kennzeichen"],["k_km","l_km"],["k_beanstandung","l_beanstandung"]];
   kopfPflicht.forEach(([id, key]) => {
     if (!document.getElementById(id).value.trim()) fehlt.push({ typ: "kopf", id, label: t("f_kopf") + ": " + t(key) });
   });
@@ -1128,6 +1134,7 @@ async function ladeBericht(id) {
   if (!b) return;
   bericht = b;
   // fehlende Felder ergänzen (Abwärtskompatibilität)
+  if (bericht.kopf.kunde === undefined) bericht.kopf.kunde = "";
   SCHRITTE.forEach(s => { if (!bericht.schritte[s.nr]) bericht.schritte[s.nr] = leererSchritt(); });
   Object.values(bericht.schritte).forEach(st => {
     if (st.status === undefined) st.status = st.ok ? "ok" : "";
