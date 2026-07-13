@@ -317,6 +317,15 @@
   .print-kopf h1 { font-size: 20px; color: var(--blau-dunkel); }
   .print-kopf p { font-size: 12px; color: var(--grau-dunkel); }
 
+  /* Login */
+  #loginOverlay { position:fixed; inset:0; background:linear-gradient(135deg,#0e4a96,#1a6dd4); display:none; align-items:center; justify-content:center; z-index:9999; padding:20px; }
+  .login-box { background:#fff; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.3); padding:30px 26px; width:100%; max-width:360px; text-align:center; }
+  .login-logo { max-height:54px; margin-bottom:10px; }
+  .login-box h2 { font-size:18px; color:var(--blau-dunkel); margin-bottom:4px; }
+  .login-sub { font-size:12px; color:var(--grau-dunkel); margin-bottom:18px; }
+  .login-box input { width:100%; padding:11px 12px; border:1px solid #cdd7e2; border-radius:8px; font-size:15px; margin-top:10px; }
+  .login-error { color:#cc0000; font-size:13px; margin-top:10px; min-height:18px; }
+
   /* KI-Diagnose */
   .ki-box { margin-top:14px; border:1.5px solid var(--blau); border-radius:8px; padding:14px; background:#f5f9ff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .ki-kopf { font-size:14px; font-weight:700; color:var(--blau-dunkel); margin-bottom:8px; }
@@ -341,6 +350,18 @@
 </head>
 <body>
 
+<div id="loginOverlay">
+  <div class="login-box">
+    <img src="https://www.autohaus-stieber.de/idbilder/xlogo.jpg" alt="Autohaus Stieber" class="login-logo" onerror="this.style.display='none'">
+    <h2>Prüfanleitung Fehlersuche</h2>
+    <p class="login-sub">Autohaus Stieber GmbH · Bitte anmelden</p>
+    <input type="email" id="loginEmail" placeholder="E-Mail" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="Passwort" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-gold" id="loginBtn" onclick="doLogin()" style="width:100%;margin-top:12px;">Anmelden</button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
 <header>
   <div class="brand">
     <img src="https://www.autohaus-stieber.de/idbilder/xlogo.jpg" alt="Autohaus Stieber" onerror="this.style.display='none'">
@@ -354,6 +375,7 @@
     <button class="btn btn-weiss btn-klein" data-i18n="btn_pruefungen" onclick="zeigeUebersicht()">📋 Prüfungen</button>
     <button class="btn btn-weiss btn-klein" data-i18n="btn_mitarbeiter" onclick="oeffneMitarbeiter()">👥 Mitarbeiter</button>
     <button class="btn btn-gold btn-klein" data-i18n="btn_neu" onclick="neuePruefung()">＋ Neue Prüfung</button>
+    <button class="btn btn-weiss btn-klein" id="logoutBtn" onclick="authLogout()" title="Abmelden" style="display:none;">🔒 Abmelden</button>
   </div>
 </header>
 
@@ -481,16 +503,65 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const CLOUD = !!(SUPABASE_URL && SUPABASE_KEY);
 let cloudOk = CLOUD;
 
+/* ---------- Anmeldung (Supabase Auth) ---------- */
+let SESSION = null;
+try { SESSION = JSON.parse(localStorage.getItem("stieber_session") || "null"); } catch(e) { SESSION = null; }
+function speichereSession(s) { SESSION = s; if (s) localStorage.setItem("stieber_session", JSON.stringify(s)); else localStorage.removeItem("stieber_session"); }
+function authToken() { return (SESSION && SESSION.access_token) ? SESSION.access_token : SUPABASE_KEY; }
+async function authLogin(email, pass) {
+  const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", {
+    method: "POST", headers: { "apikey": SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email, password: pass })
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error_description || j.msg || j.error || "Anmeldung fehlgeschlagen");
+  speichereSession({ access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (j.expires_in * 1000), email: (j.user && j.user.email) || email });
+  return true;
+}
+async function authRefresh() {
+  if (!SESSION || !SESSION.refresh_token) return false;
+  const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token", {
+    method: "POST", headers: { "apikey": SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: SESSION.refresh_token })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.access_token) { speichereSession(null); return false; }
+  speichereSession({ access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (j.expires_in * 1000), email: SESSION.email });
+  return true;
+}
+async function ensureToken() { if (SESSION && SESSION.expires_at && SESSION.expires_at < Date.now() + 60000) { await authRefresh(); } }
+function authLogout() { speichereSession(null); location.reload(); }
+async function doLogin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass = document.getElementById("loginPass").value;
+  const err = document.getElementById("loginError");
+  const btn = document.getElementById("loginBtn");
+  err.textContent = ""; btn.disabled = true; btn.textContent = "Anmelden \u2026";
+  try {
+    await authLogin(email, pass);
+    document.getElementById("loginOverlay").style.display = "none";
+    await appStart();
+  } catch(e) {
+    err.textContent = "Anmeldung fehlgeschlagen \u2013 E-Mail/Passwort pr\u00fcfen.";
+  } finally {
+    btn.disabled = false; btn.textContent = "Anmelden";
+  }
+}
+
 async function sb(pfad, opts = {}) {
-  const r = await fetch(SUPABASE_URL + "/rest/v1/" + pfad, {
+  await ensureToken();
+  const doFetch = () => fetch(SUPABASE_URL + "/rest/v1/" + pfad, {
     ...opts,
     headers: {
       "apikey": SUPABASE_KEY,
-      "Authorization": "Bearer " + SUPABASE_KEY,
+      "Authorization": "Bearer " + authToken(),
       "Content-Type": "application/json",
       ...(opts.headers || {})
     }
   });
+  let r = await doFetch();
+  if (r.status === 401 && await authRefresh()) { r = await doFetch(); }
+  if (r.status === 401) { speichereSession(null); location.reload(); throw new Error("Sitzung abgelaufen"); }
   if (!r.ok) throw new Error("Supabase " + r.status);
   const txt = await r.text();
   return txt ? JSON.parse(txt) : null;
@@ -970,9 +1041,10 @@ async function kiAnalyse() {
   btn.disabled = true; btn.textContent = "\ud83e\udd16 KI analysiert \u2026 (bis ~30 Sek.)";
   box.innerHTML = `<div class="ki-box ki-laden">\u23f3 Die KI wertet Fahrzeugdaten und Fehlercodes aus \u2026</div>`;
   try {
+    await ensureToken();
     const r = await fetch(KI_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY },
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + authToken() },
       body: JSON.stringify({ kopf: bericht.kopf, dtcs: bericht.dtcs })
     });
     const j = await r.json();
@@ -1254,13 +1326,25 @@ function schliesseModal(id) { document.getElementById(id).classList.remove("offe
 document.querySelectorAll(".modal-hg").forEach(m => m.addEventListener("click", e => { if (e.target === m) m.classList.remove("offen"); }));
 
 /* ---------- Start ---------- */
-(async () => {
+async function appStart() {
+  const lb = document.getElementById("logoutBtn"); if (lb) lb.style.display = "";
   await ladeMitarbeiter();
   applyStatic();
   const letzteId = localStorage.getItem("stieber_aktuell");
   const gespeicherte = alleBerichte();
   if (letzteId && gespeicherte[letzteId]) { await ladeBericht(letzteId); }
   else neuePruefung();
+}
+(async () => {
+  applyStatic();
+  if (SESSION && SESSION.refresh_token && await authRefresh()) {
+    document.getElementById("loginOverlay").style.display = "none";
+    await appStart();
+    return;
+  }
+  speichereSession(null);
+  document.getElementById("loginOverlay").style.display = "flex";
+  const em = document.getElementById("loginEmail"); if (em) em.focus();
 })();
 </script>
 </body>
