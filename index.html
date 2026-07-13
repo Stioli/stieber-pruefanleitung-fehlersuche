@@ -317,6 +317,22 @@
   .print-kopf h1 { font-size: 20px; color: var(--blau-dunkel); }
   .print-kopf p { font-size: 12px; color: var(--grau-dunkel); }
 
+  /* KI-Diagnose */
+  .ki-box { margin-top:14px; border:1.5px solid var(--blau); border-radius:8px; padding:14px; background:#f5f9ff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .ki-kopf { font-size:14px; font-weight:700; color:var(--blau-dunkel); margin-bottom:8px; }
+  .ki-modell { font-size:10px; font-weight:500; color:var(--grau-dunkel); }
+  .ki-sum { font-size:13px; margin-bottom:8px; }
+  .ki-abschnitt { margin-top:10px; font-size:13px; }
+  .ki-abschnitt ul { margin:4px 0 0 18px; }
+  .ki-step { display:flex; gap:8px; margin-top:6px; padding:6px 8px; background:#fff; border:1px solid #d7e3f0; border-radius:6px; page-break-inside:avoid; }
+  .ki-step-nr { flex:0 0 22px; height:22px; background:#ec1c24; color:#fff; border-radius:4px; text-align:center; font-weight:700; font-size:12px; line-height:22px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .ki-vorgehen { font-size:12px; }
+  .ki-soll { font-size:12px; font-weight:600; color:var(--blau); }
+  .ki-hinweis { margin-top:10px; font-size:12px; color:#8a5a00; background:#fff6e5; padding:6px 8px; border-radius:6px; }
+  .ki-disclaimer { margin-top:10px; font-size:10px; color:var(--grau-dunkel); font-style:italic; }
+  .ki-laden { color:var(--blau-dunkel); }
+  .ki-fehler { border-color:#cc0000; background:#fdecec; color:#a00; }
+
   @media (max-width: 640px) {
     .schritt-name { width: 100%; }
     header h1 { font-size: 14px; }
@@ -724,7 +740,8 @@ function leererBericht() {
     kopf: { kunde: "", auftrag: "", kennzeichen: "", fin: "", fahrzeug: "", km: "", datum: heute(), beanstandung: "" },
     schritte: s,
     dtcs: [leereDtcZeile(), leereDtcZeile(), leereDtcZeile()],
-    abschluss: { techniker: "", technikerDatum: "", meister: "", meisterDatum: "" }
+    abschluss: { techniker: "", technikerDatum: "", meister: "", meisterDatum: "" },
+    kiAnalyse: null
   };
 }
 function leereDtcZeile() { return { code: "", steuergeraet: "", text: "", art: "statisch" }; }
@@ -840,6 +857,8 @@ function renderSchritte() {
           <tbody></tbody>
         </table></div>
         <button class="btn btn-grau btn-klein" style="margin-top:8px;" onclick="dtcZeileHinzu()">${t("btn_zeile")}</button>
+        <button class="btn btn-klein no-print" id="kiBtn" style="margin-top:8px;margin-left:6px;background:#1a6dd4;color:#fff;" onclick="kiAnalyse()">\ud83e\udd16 KI-Analyse &amp; Pr\u00fcfplan</button>
+        <div id="kiErgebnis"></div>
       </div>`;
     }
     detail.innerHTML = inner;
@@ -848,6 +867,7 @@ function renderSchritte() {
     renderFotos(def.nr);
   });
   renderDtcs();
+  renderKiAnalyse();
 }
 
 function nameOptionen(gewaehlt) {
@@ -934,6 +954,68 @@ function renderDtcs() {
   });
 }
 function dtcZeileHinzu() { bericht.dtcs.push(leereDtcZeile()); renderDtcs(); }
+
+/* ---------- KI-Diagnose (Supabase Edge Function ki-diagnose) ---------- */
+const KI_ENDPOINT = SUPABASE_URL + "/functions/v1/ki-diagnose";
+async function kiAnalyse() {
+  const btn = document.getElementById("kiBtn");
+  const box = document.getElementById("kiErgebnis");
+  if (!CLOUD) { alert("Die KI-Analyse ben\u00f6tigt eine Online-Verbindung zur Datenbank."); return; }
+  const codes = (bericht.dtcs || []).filter(d => d.code || d.text);
+  if (!codes.length && !bericht.kopf.beanstandung) {
+    alert("Bitte zuerst Fehlercodes (Schritt 3) oder eine Kundenbeanstandung eintragen.");
+    return;
+  }
+  const alt = btn.textContent;
+  btn.disabled = true; btn.textContent = "\ud83e\udd16 KI analysiert \u2026 (bis ~30 Sek.)";
+  box.innerHTML = `<div class="ki-box ki-laden">\u23f3 Die KI wertet Fahrzeugdaten und Fehlercodes aus \u2026</div>`;
+  try {
+    const r = await fetch(KI_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY },
+      body: JSON.stringify({ kopf: bericht.kopf, dtcs: bericht.dtcs })
+    });
+    const j = await r.json();
+    if (j.ok && j.diagnose) {
+      bericht.kiAnalyse = Object.assign({}, j.diagnose, { erstellt: new Date().toISOString(), modell: j.modell || "" });
+      renderKiAnalyse(); autoSave();
+    } else {
+      box.innerHTML = `<div class="ki-box ki-fehler"><b>KI-Analyse fehlgeschlagen:</b> ${esc(j.error || "Unbekannter Fehler")}${j.rohtext ? "<br><br>" + esc(j.rohtext) : ""}</div>`;
+    }
+  } catch (e) {
+    box.innerHTML = `<div class="ki-box ki-fehler"><b>Verbindungsfehler:</b> ${esc(String(e))}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = alt;
+  }
+}
+function renderKiAnalyse() {
+  const box = document.getElementById("kiErgebnis");
+  if (!box) return;
+  const a = bericht.kiAnalyse;
+  if (!a) { box.innerHTML = ""; return; }
+  const liste = arr => (arr || []).map(x => `<li><b>${esc(x.code || "")}</b> \u2013 ${esc(x.bedeutung || "")}</li>`).join("");
+  const plan = (a.pruefplan || []).map(p => `
+      <div class="ki-step">
+        <div class="ki-step-nr">${esc(String(p.nr || ""))}</div>
+        <div><b>${esc(p.titel || "")}</b><br>
+        <span class="ki-vorgehen">${esc(p.vorgehen || "")}</span><br>
+        <span class="ki-soll">Soll / Bewertung: ${esc(p.sollwert || "")}</span></div>
+      </div>`).join("");
+  const dat = a.erstellt ? new Date(a.erstellt).toLocaleString("de-DE") : "";
+  box.innerHTML = `
+    <div class="ki-box">
+      <div class="ki-kopf">\ud83e\udd16 KI-Diagnose &amp; Pr\u00fcfplan ${a.modell ? `<span class="ki-modell">${esc(a.modell)} \u00b7 ${esc(dat)}</span>` : ""}</div>
+      ${a.zusammenfassung ? `<p class="ki-sum">${esc(a.zusammenfassung)}</p>` : ""}
+      ${a.hauptfehler && a.hauptfehler.length ? `<div class="ki-abschnitt"><b>Hauptfehler</b><ul>${liste(a.hauptfehler)}</ul></div>` : ""}
+      ${a.folgefehler && a.folgefehler.length ? `<div class="ki-abschnitt"><b>Folgefehler</b><ul>${liste(a.folgefehler)}</ul></div>` : ""}
+      ${a.wahrscheinliche_ursache ? `<div class="ki-abschnitt"><b>Wahrscheinliche Ursache</b><p>${esc(a.wahrscheinliche_ursache)}</p></div>` : ""}
+      ${plan ? `<div class="ki-abschnitt"><b>Pr\u00fcfplan</b>${plan}</div>` : ""}
+      ${a.kulanz_ruckruf ? `<div class="ki-abschnitt"><b>Kulanz / R\u00fcckruf</b><p>${esc(a.kulanz_ruckruf)}</p></div>` : ""}
+      ${a.kosten ? `<div class="ki-abschnitt"><b>Kostenrahmen</b><p>${esc(a.kosten)}</p></div>` : ""}
+      ${a.hinweis ? `<div class="ki-hinweis">${esc(a.hinweis)}</div>` : ""}
+      <div class="ki-disclaimer">KI-Vorschlag als Unterst\u00fctzung \u2013 die fachliche Pr\u00fcfung durch Techniker/Meister bleibt erforderlich.</div>
+    </div>`;
+}
 
 /* ---------- Kopfdaten & Abschluss binden ---------- */
 const KOPF_FELDER = { k_kunde:"kunde", k_auftrag:"auftrag", k_kennzeichen:"kennzeichen", k_fin:"fin", k_fahrzeug:"fahrzeug", k_km:"km", k_datum:"datum", k_beanstandung:"beanstandung" };
